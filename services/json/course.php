@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../services/college.php';
+require_once '../college.php';
 
 
 header('Content-Type: application/json');

@@ -24,6 +24,22 @@ $colleges = $collegeService->list();
 $courses = $collegeService->show_courses($college_id);
 $cities = $locationsAPIService->getCities('064500000');
 
+$batch_name = "All";
+if ($batch_id) {
+    $filteredBatch = array_filter($batches, fn($batch) => $batch['id'] == $batch_id);
+    $batch_name = !empty($filteredBatch) ? reset($filteredBatch)['name'] : "All";
+}
+$college_name = "All";
+if ($batch_id) {
+    $filteredCollege = array_filter($colleges, fn($college) => $college['id'] == $college_id);
+    $college_name = !empty($filteredCollege) ? reset($filteredCollege)['name'] : "All";
+}
+$course_name = "All";
+if ($batch_id) {
+    $filteredCourse = array_filter($courses, fn($course) => $course['id'] == $course_id);
+    $course_name = !empty($filteredCourse) ? reset($filteredCourse)['name'] : "All";
+}
+
 $is_uploading = false;
 $title = 'Info';
 $icon = 'info';

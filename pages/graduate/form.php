@@ -22,6 +22,8 @@ if ($method_ === 'POST') {
     $position = $_POST['position'] ?? null;
     $start_date = $_POST['start_date'] ?? null;
     $end_date = $_POST['end_date'] ?? null;
+    $id_copy = $_FILES['id_copy'] ?? null;
+    $coe_copy = $_FILES['coe_copy'] ?? null;
 
     $address = "$address_line1, $barangay, $city";
     $res = $graduateService->store(
@@ -43,6 +45,8 @@ if ($method_ === 'POST') {
         $college_id,
         $course_id,
         $company,
+        $id_copy,
+        $coe_copy,
         $position,
         $start_date,
         $end_date
@@ -57,7 +61,7 @@ if ($method_ === 'POST') {
                 <h4 class="card-title my-3 text-uppercase text-center">Graduate form</h4>
             </div>
             <div class="card-body">
-                <form action="?action=form&page=graduate" method="POST">
+                <form action="?action=form&page=graduate" method="POST" enctype="multipart/form-data">
                     <div class="row">
                         <div class="col-md-6">
                             <h4 class="text-uppercase text-info">Personal Details</h4>
@@ -207,6 +211,14 @@ if ($method_ === 'POST') {
                                                 <input type="date" name="end_date" class="form-control">
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Company ID:</label>
+                                        <input type="file" name="id_copy" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Certificate of Employment:</label>
+                                        <input type="file" name="coe_copy" class="form-control">
                                     </div>
                                 </div>
                             </div>

@@ -67,14 +67,18 @@ if ($method_ === 'POST') {
         $position = $_POST['position'];
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'] ?? null;
-        $graduateService->add_work_experience($id, $company, $position, $start_date, $end_date);
+        $id_copy = $_FILES['id_copy'] ?? null;
+        $coe_copy = $_FILES['coe_copy'] ?? null;
+        $graduateService->add_work_experience($id, $company, $position, $start_date, $end_date, $id_copy, $coe_copy);
     } elseif (isset($_POST['workUpdateForm'])) {
         $company = $_POST['company'];
         $position = $_POST['position'];
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'] ?? null;
         $work_id = $_POST['work_id'];
-        $graduateService->update_work_experience($work_id, $company, $position, $start_date, $end_date);
+        $id_copy = $_FILES['id_copy'] ?? null;
+        $coe_copy = $_FILES['coe_copy'] ?? null;
+        $graduateService->update_work_experience($work_id, $company, $position, $start_date, $end_date, $id_copy, $coe_copy);
     }
 } else {
     if (isset($_GET['delete']) && $_GET['delete'] == "work") {
@@ -287,6 +291,14 @@ $name = trim(implode(' ', $nameParts));
                             </div>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Company ID:</label>
+                        <input type="file" name="id_copy" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Certificate of Employment:</label>
+                        <input type="file" name="coe_copy" class="form-control">
+                    </div>
                     <button type="submit" name="workForm" class="btn btn-primary btn-block">Save</button>
                 </form>
             </div>
@@ -392,15 +404,50 @@ $name = trim(implode(' ', $nameParts));
                             </div>
                             <div class="experience-content">
                                 <div class="timeline-content">
-                                    <p class="name mb-0 text-success"><strong><?= htmlspecialchars($experience['position']) ?></strong> at <em><?= htmlspecialchars($experience['company']) ?></em></p>
-                                    <p class=""><?= date('F j, Y', strtotime($experience['start_date'])) ?> -
-                                        <?= $experience['end_date'] ? date('F j, Y', strtotime($experience['end_date'])) : 'Present' ?></p>
+                                    <p class="name mb-0 text-success">
+                                        <strong><?= htmlspecialchars($experience['position']) ?></strong> at
+                                        <em><?= htmlspecialchars($experience['company']) ?></em>
+                                    </p>
+                                    <p>
+                                        <?= date('F j, Y', strtotime($experience['start_date'])) ?> -
+                                        <?= $experience['end_date'] ? date('F j, Y', strtotime($experience['end_date'])) : 'Present' ?>
+                                    </p>
+
+                                    <div class="files d-flex">
+                                        <?php if (!empty($experience['id_copy'])): ?>
+                                            <p class="mb-1">
+                                                <strong>ID Copy:</strong><br>
+                                                <a href="/career_progression/assets/uploads/ids/<?= htmlspecialchars($experience['id_copy']) ?>"
+                                                    download="<?= htmlspecialchars($experience['id_copy']) ?>"
+                                                    title="Download ID Copy">
+                                                    <img src="/career_progression/assets/uploads/ids/<?= htmlspecialchars($experience['id_copy']) ?>"
+                                                        alt="ID Copy" class="img-thumbnail" style="max-height: 150px;">
+                                                </a>
+                                            </p>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($experience['coe_copy'])): ?>
+                                            <p class="mb-1 ml-2">
+                                                <strong>COE Copy:</strong><br>
+                                                <a href="/career_progression/assets/uploads/coe/<?= htmlspecialchars($experience['coe_copy']) ?>"
+                                                    download="<?= htmlspecialchars($experience['coe_copy']) ?>"
+                                                    title="Download COE Copy">
+                                                    <img src="/career_progression/assets/uploads/coe/<?= htmlspecialchars($experience['coe_copy']) ?>"
+                                                        alt="COE Copy" class="img-thumbnail" style="max-height: 150px;">
+                                                </a>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+
                                     <small class="d-flex">
-                                        <a data-target="#work-<?= $experience['id'] ?>-Modal" data-toggle="modal" class="text-info mr-2">EDIT</a> | <button data-id="<?= $experience['id'] ?>" class="text-danger ml-2 delete-btn border-0">DELETE</button>
+                                        <a data-target="#work-<?= $experience['id'] ?>-Modal" data-toggle="modal" class="text-info mr-2">EDIT</a> |
+                                        <button data-id="<?= $experience['id'] ?>" class="text-danger ml-2 delete-btn border-0">DELETE</button>
                                     </small>
                                 </div>
                             </div>
                         </li>
+
+
 
                         <div class="modal fade" id="work-<?= $experience['id'] ?>-Modal" tabindex="-1" role="dialog" aria-labelledby="work-<?= $experience['id'] ?>-ModalLabel" aria-hidden="true">
                             <div class="modal-dialog" role="document">
@@ -412,7 +459,7 @@ $name = trim(implode(' ', $nameParts));
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <form method="POST" action="?page=graduate&action=show&id=<?= $id ?>">
+                                        <form method="POST" action="?page=graduate&action=show&id=<?= $id ?>" enctype="multipart/form-data">
                                             <div class="form-group">
                                                 <label>Company:</label>
                                                 <input type="text" name="company" value="<?= $experience['company'] ?>" class="form-control">
@@ -435,6 +482,14 @@ $name = trim(implode(' ', $nameParts));
                                                     </div>
                                                 </div>
                                                 <input type="hidden" name="work_id" value="<?= $experience['id'] ?>">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Company ID:</label>
+                                                <input type="file" name="id_copy" class="form-control">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Certificate of Employment:</label>
+                                                <input type="file" name="coe_copy" class="form-control">
                                             </div>
                                             <button type="submit" name="workUpdateForm" class="btn btn-primary btn-block">Update</button>
                                         </form>

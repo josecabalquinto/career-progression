@@ -14,22 +14,22 @@ unset($_SESSION['error']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="/career_progression/assets/img/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="../../assets/img/favicon.png">
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="/career_progression/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
 
     <!-- Fontawesome CSS -->
-    <link rel="stylesheet" href="/career_progression/assets/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../../assets/css/font-awesome.min.css">
 
     <!-- Lineawesome CSS -->
-    <link rel="stylesheet" href="/career_progression/assets/css/line-awesome.min.css">
+    <link rel="stylesheet" href="../../assets/css/line-awesome.min.css">
 
     <!-- Chart CSS -->
-    <link rel="stylesheet" href="/career_progression/assets/plugins/morris/morris.css">
+    <link rel="stylesheet" href="../../assets/plugins/morris/morris.css">
 
     <!-- Main CSS -->
-    <link rel="stylesheet" href="/career_progression/assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
 
 <body>
@@ -43,7 +43,7 @@ unset($_SESSION['error']);
             <?php endif; ?>
 
             <h3 class="text-center mb-4 text-uppercase">Login</h3>
-            <form action="/career_progression/services/auth.php" method="POST">
+            <form action="../../services/auth.php" method="POST">
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
                     <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>

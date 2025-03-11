@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . './connection.php';
-require_once __DIR__ . '/address.php';
-require_once __DIR__ . '/alert.php';
+require_once '../../services/connection.php';
+require_once '../../services/address.php';
+require_once '../../services/alert.php';
 class GraduatesService
 {
     private $dbConnection;
@@ -20,13 +20,25 @@ class GraduatesService
     {
         $pdo = $this->dbConnection->connect();
         $sql = "SELECT g.*, 
-               b.name AS batch_name, 
-               c.name AS college_name, c.code AS college_code, 
-               cr.name AS course_name, cr.code AS course_code
-        FROM graduates g
-        LEFT JOIN batches b ON g.batch_id = b.id
-        LEFT JOIN colleges c ON g.college_id = c.id
-        LEFT JOIN courses cr ON g.course_id = cr.id";
+       b.name AS batch_name, 
+       c.name AS college_name, c.code AS college_code, 
+       cr.name AS course_name, cr.code AS course_code,
+       we.company, we.position, we.start_date, we.end_date
+            FROM graduates g
+            LEFT JOIN batches b ON g.batch_id = b.id
+            LEFT JOIN colleges c ON g.college_id = c.id
+            LEFT JOIN courses cr ON g.course_id = cr.id
+            LEFT JOIN work_experiences we 
+                ON we.graduate_id = g.id 
+                AND we.id = (
+                    SELECT we2.id 
+                    FROM work_experiences we2 
+                    WHERE we2.graduate_id = g.id 
+                    AND we2.end_date IS NULL
+                    ORDER BY we2.start_date ASC
+                    LIMIT 1
+                )
+            ";
 
         $conditions = [];
         $params = [];
@@ -82,6 +94,8 @@ class GraduatesService
         $college_id,
         $course_id,
         $company,
+        $id_copy,
+        $coe_copy,
         $position,
         $start_date,
         $end_date
@@ -108,7 +122,7 @@ class GraduatesService
             $id = $pdo->lastInsertId();
 
             if ($company != '') {
-                $this->add_work_experience($id, $company, $position, $start_date, $end_date);
+                $this->add_work_experience($id, $company, $position, $start_date, $end_date, $id_copy, $coe_copy);
             }
             $this->alertService->set__("success", "Graduate information has been added successfully.");
             return true;
@@ -169,19 +183,51 @@ class GraduatesService
         }
     }
 
-    public function add_work_experience($id, $company, $position, $start_date, $end_date)
+    public function add_work_experience($id, $company, $position, $start_date, $end_date, $id_copy, $coe_copy)
     {
         try {
             $pdo = $this->dbConnection->connect();
             $start_date = date('Y-m-d', strtotime($start_date));
             $end_date = $end_date ? date('Y-m-d', strtotime($end_date)) : null;
-            $stmt = $pdo->prepare("INSERT INTO work_experiences (graduate_id, company, position,start_date, end_date)
-                                VALUES (:graduate_id, :company, :position, :start_date, :end_date)");
+            $idPath = null;
+            $coePath = null;
+            if ($id_copy != null) {
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (in_array($id_copy['type'], $allowedTypes) || $id_copy['size'] < 100 * 1024 * 1024) {
+                    $ext = pathinfo($id_copy['name'], PATHINFO_EXTENSION);
+                    $newFileName = 'graduate_id_' . $id . '_' . time() . '.' . $ext;
+                    $uploadDir = "../../assets/uploads/ids/";
+                    $idPath = $uploadDir . $newFileName;
+                    if (!move_uploaded_file($id_copy['tmp_name'], $idPath)) {
+                        $idPath = null;
+                    } else {
+                        $idPath = $newFileName;
+                    }
+                }
+            }
+            if ($coe_copy != null) {
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (in_array($coe_copy['type'], $allowedTypes) || $coe_copy['size'] < 100 * 1024 * 1024) {
+                    $ext = pathinfo($coe_copy['name'], PATHINFO_EXTENSION);
+                    $newFileName = 'graduate_coe_' . $id . '_' . time() . '.' . $ext;
+                    $uploadDir = "../../assets/uploads/coe/";
+                    $coePath = $uploadDir . $newFileName;
+                    if (!move_uploaded_file($coe_copy['tmp_name'], $coePath)) {
+                        $coePath = null;
+                    } else {
+                        $coePath = $newFileName;
+                    }
+                }
+            }
+            $stmt = $pdo->prepare("INSERT INTO work_experiences (graduate_id, company, position,start_date, end_date, id_copy, coe_copy)
+                                VALUES (:graduate_id, :company, :position, :start_date, :end_date, :id_copy, :coe_copy)");
             $stmt->bindParam(':graduate_id', $id);
             $stmt->bindParam(':company', $company);
             $stmt->bindParam(':position', $position);
             $stmt->bindParam(':start_date', $start_date);
             $stmt->bindParam(':end_date', $end_date);
+            $stmt->bindParam(':id_copy', $idPath);
+            $stmt->bindParam(':coe_copy', $coePath);
             $stmt->execute();
 
             $this->alertService->set__("success", "Work experience has been added successfully.");
@@ -192,17 +238,58 @@ class GraduatesService
         }
     }
 
-    public function update_work_experience($id, $company, $position, $start_date, $end_date)
+    public function update_work_experience($id, $company, $position, $start_date, $end_date, $id_copy, $coe_copy)
     {
         try {
             $pdo = $this->dbConnection->connect();
 
             $start_date = date('Y-m-d', strtotime($start_date));
             $end_date = !empty($end_date) ? date('Y-m-d', strtotime($end_date)) : null;
+            $idPath = null;
+            $coePath = null;
 
-            $stmt = $pdo->prepare("UPDATE work_experiences SET company = :company, position = :position, start_date = :start_date, 
-                                end_date = :end_date
-                                WHERE id = :id");
+            if ($id_copy != null) {
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (in_array($id_copy['type'], $allowedTypes) && $id_copy['size'] < 100 * 1024 * 1024) {
+                    $ext = pathinfo($id_copy['name'], PATHINFO_EXTENSION);
+                    $newFileName = 'graduate_id_' . $id . '_' . time() . '.' . $ext;
+                    $uploadDir = "../../assets/uploads/ids/";
+                    $idPath = $uploadDir . $newFileName;
+                    if (!move_uploaded_file($id_copy['tmp_name'], $idPath)) {
+                        $idPath = null;
+                    } else {
+                        $idPath = $newFileName;
+                    }
+                }
+            }
+
+            if ($coe_copy != null) {
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (in_array($coe_copy['type'], $allowedTypes) && $coe_copy['size'] < 100 * 1024 * 1024) {
+                    $ext = pathinfo($coe_copy['name'], PATHINFO_EXTENSION);
+                    $newFileName = 'graduate_coe_' . $id . '_' . time() . '.' . $ext;
+                    $uploadDir = "../../assets/uploads/coe/";
+                    $coePath = $uploadDir . $newFileName;
+                    if (!move_uploaded_file($coe_copy['tmp_name'], $coePath)) {
+                        $coePath = null;
+                    } else {
+                        $coePath = $newFileName;
+                    }
+                }
+            }
+
+            $query = "UPDATE work_experiences SET company = :company, position = :position, start_date = :start_date, end_date = :end_date";
+
+            if ($idPath !== null) {
+                $query .= ", id_copy = :id_copy";
+            }
+            if ($coePath !== null) {
+                $query .= ", coe_copy = :coe_copy";
+            }
+
+            $query .= " WHERE id = :id";
+
+            $stmt = $pdo->prepare($query);
             $stmt->bindParam(':company', $company);
             $stmt->bindParam(':position', $position);
             $stmt->bindParam(':start_date', $start_date);
@@ -214,6 +301,13 @@ class GraduatesService
                 $stmt->bindParam(':end_date', $end_date);
             }
 
+            if ($idPath !== null) {
+                $stmt->bindParam(':id_copy', $idPath);
+            }
+            if ($coePath !== null) {
+                $stmt->bindParam(':coe_copy', $coePath);
+            }
+
             $stmt->execute();
 
             $this->alertService->set__("success", "Work experience has been updated successfully.");
@@ -223,6 +317,7 @@ class GraduatesService
             return false;
         }
     }
+
 
 
     public function delete_work_experience($id)
@@ -328,7 +423,7 @@ class GraduatesService
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $newFileName = 'graduate_' . $graduate_id . '_' . time() . '.' . $ext;
 
-        $uploadDir = __DIR__ . "../../assets/uploads/profiles/";
+        $uploadDir = "../../assets/uploads/profiles/";
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }

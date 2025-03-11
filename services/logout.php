@@ -2,5 +2,5 @@
 session_start();
 session_unset();
 session_destroy();
-header('Location: /career_progression/pages/auth/login.php');
+header('Location: ../pages/auth/login.php');
 exit();

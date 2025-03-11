@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../services/locationsAPI.php';
+require_once '../locationsAPI.php';
 header('Content-Type: application/json');
 
 if (!isset($_GET['city_code'])) {
